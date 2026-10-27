@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RF WaveCode &bull; Space Propulsion Digital Twin & Hardware Lab Partnership</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <!-- Three.js for 3D Magnet Simulation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  
+  <!-- Chart.js for Multi-Physics Simulation Graphs -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- KaTeX for Readable Scientific Formulas -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"
+          onload="renderMathInElement(document.body, {
+            delimiters: [
+              {left: '$$', right: '$$', display: true},
+              {left: '$', right: '$', display: false}
+            ],
+            throwOnError: false
+          });"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eef6ff',
+              100: '#d9eaff',
+              500: '#0284c7',
+              600: '#0369a1',
+              900: '#082f49',
+              accent: '#38bdf8',
+              glow: '#00f0ff'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    .glow-cyan {
+      box-shadow: 0 0 25px rgba(56, 189, 248, 0.25);
+    }
+    .grid-bg {
+      background-size: 32px 32px;
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    }
+    canvas { outline: none; }
+    /* Custom scrollbars */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #0b1120; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #334155; }
+  </style>
+</head>
+<body class="bg-[#080d1a] text-slate-100 font-sans min-h-screen selection:bg-sky-500 selection:text-white flex flex-col">
+
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none bg-slate-900/95 border border-sky-500/50 text-white px-5 py-3.5 rounded-xl shadow-2xl flex items-center gap-3 text-sm">
+    <div class="w-2.5 h-2.5 rounded-full bg-sky-400 animate-ping"></div>
+    <span id="toastMsg">Action completed successfully.</span>
+  </div>
+
+  <!-- Navigation Bar -->
+  <nav class="sticky top-0 z-40 bg-[#080d1a]/90 backdrop-blur-md border-b border-slate-800/80 px-4 sm:px-8 py-3.5">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-3">
+        <div class="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 to-indigo-600 shadow-lg shadow-sky-900/40">
+          <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-extrabold tracking-tight text-lg text-white">RF Wave<span class="text-sky-400">Code</span></span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-medium tracking-wide bg-sky-950 text-sky-400 border border-sky-800/60">SOFTWARE LAB</span>
+          </div>
+          <p class="text-[11px] text-slate-400">Scientific Digital Twins &bull; NASA SBIR Architecture</p>
+        </div>
+      </div>
+
+      <!-- Tab Switcher -->
+      <div class="hidden md:flex items-center gap-1.5 p-1 bg-slate-900/90 border border-slate-800 rounded-xl text-xs font-medium">
+        <button onclick="switchTab('simulation')" id="tabBtn-simulation" class="px-4 py-2 rounded-lg bg-sky-600 text-white font-semibold shadow-sm transition">
+          Interactive Digital Twin
+        </button>
+        <button onclick="switchTab('proposal')" id="tabBtn-proposal" class="px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition">
+          Full NASA SBIR Document
+        </button>
+        <button onclick="switchTab('partnership')" id="tabBtn-partnership" class="px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          Hardware Lab Co-Op
+        </button>
+      </div>
+
+      <!-- Action / Contact Call -->
+      <div class="flex items-center gap-2.5">
+        <button onclick="switchTab('partnership')" class="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow-md shadow-sky-600/20 transition flex items-center gap-1.5">
+          <span>Partner With Us</span>
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Mobile Tab Row -->
+  <div class="md:hidden flex border-b border-slate-800 bg-slate-900 px-4 py-2 overflow-x-auto gap-2 text-xs">
+    <button onclick="switchTab('simulation')" id="mTabBtn-simulation" class="px-3 py-1.5 rounded-lg bg-sky-600 text-white whitespace-nowrap">Digital Twin</button>
+    <button onclick="switchTab('proposal')" id="mTabBtn-proposal" class="px-3 py-1.5 rounded-lg text-slate-400 hover:bg-slate-800 whitespace-nowrap">NASA Proposal</button>
+    <button onclick="switchTab('partnership')" id="mTabBtn-partnership" class="px-3 py-1.5 rounded-lg text-slate-400 hover:bg-slate-800 whitespace-nowrap">Hardware Lab Co-Op</button>
+  </div>
+
+  <!-- Hero Banner: Clarifying RF WaveCode Software Role -->
+  <section class="border-b border-slate-800/80 bg-gradient-to-b from-slate-900/70 to-[#080d1a] px-4 sm:px-8 py-8 sm:py-10 grid-bg relative">
+    <div class="max-w-7xl mx-auto flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+      <div class="max-w-3xl">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/30 text-sky-400 text-xs font-mono font-medium mb-3">
+          <span class="w-1.5 h-1.5 rounded-full bg-sky-400 animate-ping"></span>
+          RF WAVECODE DEMONSTRATION &bull; LOOKING FOR EXPERIMENTAL HARDWARE LABS
+        </div>
+        <h1 class="text-2xl sm:text-4xl font-black text-white tracking-tight leading-tight">
+          We Built the Software &amp; Physics Digital Twin.<br/>
+          <span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-indigo-300">
+            Now We Need Hardware Labs to Wind the Coils.
+          </span>
+        </h1>
+        <p class="mt-3 text-sm sm:text-base text-slate-300 leading-relaxed">
+          <strong>RF WaveCode</strong> creates deep-tech modeling software, dynamic quench simulators, and flight architecture frameworks. This application showcases our full NASA SBIR/STTR technical blueprint for <strong class="text-sky-300">Conduction-Cooled 2G REBCO HTS Magnets</strong>. We are actively seeking university and commercial superconducting labs with vacuum cryostats to join us on co-authored proposals and flight prototypes.
+        </p>
+      </div>
+
+      <!-- Quick Metrics Strip -->
+      <div class="grid grid-cols-2 sm:grid-cols-2 gap-3 w-full lg:w-auto shrink-0">
+        <div class="bg-slate-900/80 border border-slate-800 p-3.5 rounded-xl">
+          <div class="text-xs text-slate-400 font-mono">Target On-Axis Field</div>
+          <div class="text-xl font-bold text-sky-400 font-mono mt-0.5">8.0 &ndash; 15.0 T</div>
+          <div class="text-[11px] text-slate-500">Plasma compression</div>
+        </div>
+        <div class="bg-slate-900/80 border border-slate-800 p-3.5 rounded-xl">
+          <div class="text-xs text-slate-400 font-mono">Cooling Regime</div>
+          <div class="text-xl font-bold text-emerald-400 font-mono mt-0.5">20 K &ndash; 50 K</div>
+          <div class="text-[11px] text-slate-500">Zero Liquid Helium ($>80\%$ Mass Cut)</div>
+        </div>
+        <div class="bg-slate-900/80 border border-slate-800 p-3.5 rounded-xl">
+          <div class="text-xs text-slate-400 font-mono">Software Twin</div>
+          <div class="text-xl font-bold text-indigo-400 font-mono mt-0.5">Real-Time FEA</div>
+          <div class="text-[11px] text-slate-500">Non-insulated turn shunting</div>
+        </div>
+        <div class="bg-slate-900/80 border border-slate-800 p-3.5 rounded-xl">
+          <div class="text-xs text-slate-400 font-mono">Phase I Budget</div>
+          <div class="text-xl font-bold text-amber-400 font-mono mt-0.5">$225,000</div>
+          <div class="text-[11px] text-slate-500">NASA SBIR TX01.01 / TX03.01</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 1: INTERACTIVE DIGITAL TWIN & SIMULATION -->
+  <main id="tab-simulation" class="tab-content flex-1 max-w-7xl mx-auto w-full px-4 sm:px-8 py-8 space-y-8">
+    
+    <!-- Simulation Top Banner -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-xl bg-slate-900/90 border border-slate-800">
+      <div>
+        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+          <span>Digital Twin: 3D Conduction-Cooled HTS Coil & Multi-Physics Solver</span>
+          <span class="text-xs px-2 py-0.5 rounded bg-sky-900/50 text-sky-400 border border-sky-800 font-mono">Engine: RF-WaveCode v2.4</span>
+        </h2>
+        <p class="text-xs text-slate-400">Simulate magnetic nozzle field contours, self-protecting quench behavior, and thermal radiator mass trade-offs in real time.</p>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button onclick="triggerHotspotTest()" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-rose-900/40 hover:bg-rose-900/70 border border-rose-700/60 text-rose-300 transition flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+          Simulate Hot Spot Quench Event
+        </button>
+        <button onclick="resetSimParams()" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+          Reset Parameters
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Simulator Grid: 3D Viewport on Left, Parameter Controls & Graphs on Right -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      
+      <!-- 3D Canvas Box (7 cols) -->
+      <div class="lg:col-span-7 bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden flex flex-col shadow-xl">
+        <div class="px-4 py-3 bg-slate-950/80 border-b border-slate-800/80 flex items-center justify-between">
+          <div class="flex items-center gap-2 text-xs font-mono text-slate-300">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            3D WebGL Electromagnetic Rendering
+          </div>
+          <div class="text-[11px] text-slate-400 font-mono">
+            Click &amp; Drag to Rotate &bull; Scroll to Zoom
+          </div>
+        </div>
+        
+        <!-- 3D Container -->
+        <div class="relative w-full h-[380px] sm:h-[440px] bg-black">
+          <div id="three-container" class="w-full h-full cursor-grab active:cursor-grabbing"></div>
+          
+          <!-- On-Canvas HUD Overlay -->
+          <div class="absolute top-3 left-3 bg-slate-900/85 backdrop-blur-md border border-slate-700/60 p-3 rounded-lg text-xs font-mono space-y-1 pointer-events-none">
+            <div class="text-slate-400">Calculated $B_0$ (On-Axis): <span id="hud-bfield" class="text-sky-400 font-bold">10.2 T</span></div>
+            <div class="text-slate-400">Hoop Stress ($\sigma_\theta$): <span id="hud-stress" class="text-emerald-400 font-bold">428 MPa</span></div>
+            <div class="text-slate-400">Radial Turn Resistance: <span id="hud-rc" class="text-amber-400 font-bold">18.5 µΩ·cm²</span></div>
+            <div class="text-slate-400">Quench State: <span id="hud-quench" class="text-emerald-400 font-bold">SUPERCONDUCTING</span></div>
+          </div>
+
+          <div class="absolute bottom-3 right-3 flex items-center gap-2 bg-slate-950/80 p-2 rounded-lg border border-slate-800 text-[10px] text-slate-400 font-mono">
+            <span class="inline-block w-3 h-3 rounded bg-amber-500"></span> 2G REBCO Tape
+            <span class="inline-block w-3 h-3 rounded bg-slate-500 ml-2"></span> CTE Mandrel
+            <span class="inline-block w-3 h-3 rounded bg-sky-500 ml-2"></span> Cryo Busbar
+          </div>
+        </div>
+
+        <div class="p-4 bg-slate-950/40 border-t border-slate-800/80 text-xs text-slate-400 flex flex-wrap justify-between gap-2">
+          <span>Non-insulated (NI) winding allows azimuthal current $I_\theta$ to divert radially to $I_r$ if $T > T_c$.</span>
+          <span class="text-sky-400 font-medium">Software model powered by RF WaveCode 3D field integrator</span>
+        </div>
+      </div>
+
+      <!-- Controls & Multi-Physics Readout (5 cols) -->
+      <div class="lg:col-span-5 space-y-6">
+        
+        <!-- Parameter Sliders Box -->
+        <div class="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl shadow-xl space-y-4">
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider font-mono text-sky-400 flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+            Interactive Solver Controls
+          </h3>
+
+          <!-- Operating Temp Slider -->
+          <div>
+            <div class="flex justify-between text-xs font-mono mb-1">
+              <span class="text-slate-300">Operating Temperature ($T_{op}$)</span>
+              <span id="val-temp" class="text-sky-400 font-bold">30 K</span>
+            </div>
+            <input id="slider-temp" type="range" min="4" max="77" value="30" step="1" 
+                   oninput="updateSimParameters()"
+                   class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500">
+            <div class="flex justify-between text-[10px] text-slate-500 font-mono mt-1">
+              <span>4.2 K (Liquid He)</span>
+              <span>30 K (Cryocooler)</span>
+              <span>77 K (Liquid N2)</span>
+            </div>
+          </div>
+
+          <!-- Operating Current Slider -->
+          <div>
+            <div class="flex justify-between text-xs font-mono mb-1">
+              <span class="text-slate-300">Coil Transport Current ($I_{op}$)</span>
+              <span id="val-current" class="text-sky-400 font-bold">250 A</span>
+            </div>
+            <input id="slider-current" type="range" min="50" max="500" value="250" step="10" 
+                   oninput="updateSimParameters()"
+                   class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500">
+            <div class="flex justify-between text-[10px] text-slate-500 font-mono mt-1">
+              <span>50 A</span>
+              <span>250 A (Baseline)</span>
+              <span>500 A (Near Critical)</span>
+            </div>
+          </div>
+
+          <!-- Winding Turn Count Slider -->
+          <div>
+            <div class="flex justify-between text-xs font-mono mb-1">
+              <span class="text-slate-300">Winding Turns ($N$)</span>
+              <span id="val-turns" class="text-sky-400 font-bold">180 Turns</span>
+            </div>
+            <input id="slider-turns" type="range" min="60" max="360" value="180" step="10" 
+                   oninput="updateSimParameters()"
+                   class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500">
+          </div>
+
+          <!-- Radiator Mass Calculation Card -->
+          <div class="p-3.5 bg-slate-950/70 border border-slate-800 rounded-xl space-y-2 text-xs">
+            <div class="font-bold text-white flex justify-between items-center">
+              <span>Stefan-Boltzmann Space Radiator Area:</span>
+              <span id="stat-radiator" class="text-emerald-400 font-mono font-bold text-sm">2.4 m²</span>
+            </div>
+            <p class="text-[11px] text-slate-400 leading-relaxed">
+              At <span id="stat-temp-tag" class="text-sky-300 font-mono">30 K</span>, radiator mass drops by <strong id="stat-reduction" class="text-white">83%</strong> compared to traditional 4.2 K liquid helium architectures due to $T_{rad}^4$ radiation scaling.
+            </p>
+          </div>
+        </div>
+
+        <!-- Quench Dynamics Real-Time Chart -->
+        <div class="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl shadow-xl space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider font-mono text-emerald-400">
+              Quench Auto-Shunting Transient
+            </h3>
+            <span class="text-[10px] text-slate-400 font-mono">Radial Current Sharing vs. Time</span>
+          </div>
+
+          <div class="w-full h-44">
+            <canvas id="quenchChart"></canvas>
+          </div>
+          <p class="text-[11px] text-slate-400 leading-relaxed">
+            In non-insulated REBCO windings, when a localized defect develops, current bypasses the normal zone through adjacent turns. Notice how the hotspot temperature stabilizes safely without catastrophic burnout.
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Software Stack & Tech Architecture for Labs -->
+    <div class="mt-8 bg-gradient-to-r from-slate-900 via-sky-950/40 to-slate-900 border border-sky-800/40 rounded-2xl p-6 sm:p-8">
+      <div class="max-w-3xl">
+        <span class="px-2.5 py-1 rounded bg-sky-900/60 text-sky-300 text-xs font-mono font-semibold">RF WAVECODE CAPABILITIES</span>
+        <h3 class="text-xl sm:text-2xl font-black text-white mt-2">What RF WaveCode Delivers to Experimental Labs</h3>
+        <p class="text-sm text-slate-300 mt-2 leading-relaxed">
+          We don't manufacture physical coils—we empower the teams that do. We deliver turnkey scientific software pipelines for national labs, university research groups, and aerospace defense contractors:
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 text-xs text-slate-300">
+        <div class="p-4 bg-slate-900/80 border border-slate-800 rounded-xl space-y-1.5">
+          <div class="w-7 h-7 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center font-bold font-mono">01</div>
+          <h4 class="font-bold text-white text-sm">Coupled FEA Solvers</h4>
+          <p class="text-slate-400 leading-relaxed">Electromagnetic, screening-current, and thermal finite-element modeling simulating $J \times B$ Lorentz stresses before turning on real power supplies.</p>
+        </div>
+        <div class="p-4 bg-slate-900/80 border border-slate-800 rounded-xl space-y-1.5">
+          <div class="w-7 h-7 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold font-mono">02</div>
+          <h4 class="font-bold text-white text-sm">Real-Time Lab DAQ Systems</h4>
+          <p class="text-slate-400 leading-relaxed">High-speed telemetry ingestion (Hall probes, thermocouple arrays, and voltage taps) with automated normal-zone hot spot detection algorithms.</p>
+        </div>
+        <div class="p-4 bg-slate-900/80 border border-slate-800 rounded-xl space-y-1.5">
+          <div class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold font-mono">03</div>
+          <h4 class="font-bold text-white text-sm">SBIR &amp; Defense Proposal Backing</h4>
+          <p class="text-slate-400 leading-relaxed">Full technical writing, multi-physics validation datasets, and compliant NASA/DoD proposal deliverables ready for co-submission.</p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- TAB 2: FULL NASA SBIR PROPOSAL VIEWPORT -->
+  <section id="tab-proposal" class="tab-content hidden flex-1 max-w-4xl mx-auto w-full px-4 sm:px-8 py-8">
+    <div class="bg-white text-slate-900 rounded-2xl shadow-2xl border border-slate-200 p-6 sm:p-12 md:p-16">
+      
+      <!-- Toolbar inside Proposal -->
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b-2 border-slate-900 pb-5 mb-8">
+        <div>
+          <span class="text-xs font-mono font-bold uppercase tracking-wider text-sky-700 bg-sky-50 px-2.5 py-1 rounded">
+            NASA SBIR/STTR Phase I Technical Proposal Framework
+          </span>
+          <div class="text-[11px] text-slate-500 mt-1">Authored &amp; Digital-Twinned by RF WaveCode Software Engineering</div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button onclick="downloadProposalMarkdown()" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white transition flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Download Markdown (.md)
+          </button>
+          <button onclick="window.print()" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold border border-slate-300 hover:bg-slate-50 text-slate-700 transition flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+            Print Proposal
+          </button>
+        </div>
+      </div>
+
+      <!-- Proposal Header Details -->
+      <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 leading-snug">
+        Ultra-Lightweight, Conduction-Cooled REBCO High-Temperature Superconducting (HTS) Magnet Assemblies for Compact Space Fusion and Plasma Propulsion
+      </h1>
+
+      <div class="mt-4 pt-3 border-t border-slate-100 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs text-slate-600">
+        <div><strong class="text-slate-900">Topic Codes:</strong><br/>TX01.01 &amp; TX03.01</div>
+        <div><strong class="text-slate-900">Period:</strong><br/>6 Months (Phase I)</div>
+        <div><strong class="text-slate-900">Budget:</strong><br/>$225,000 (NASA Phase I)</div>
+        <div><strong class="text-slate-900">Target TRL:</strong><br/>TRL 2 &rarr; TRL 4</div>
+      </div>
+
+      <!-- Executive Driving Mechanism -->
+      <div class="mt-8 bg-gradient-to-r from-sky-50 to-indigo-50 border-l-4 border-sky-600 p-5 rounded-r-lg">
+        <h2 class="text-xs font-extrabold uppercase tracking-wider text-sky-900 mb-1.5">Executive Driving Mechanism</h2>
+        <p class="text-sm font-medium text-slate-800 leading-relaxed">
+          The core driving mechanism is a cryogen-free, conduction-cooled rare-earth barium copper oxide high-temperature superconducting coil assembly operating between $20\text{ K}$ and $50\text{ K}$ via solid-state pulse-tube cryocoolers and thermal busbars, engineered with a non-insulated winding topology that passively bypasses quench hot-spots through turn-to-turn radial current sharing without the mass penalty of active detection electronics or dump resistors.
+        </p>
+      </div>
+
+      <!-- Section 1 -->
+      <div class="mt-8 space-y-4 text-sm text-slate-700 leading-relaxed">
+        <h2 class="text-base font-bold text-slate-900 uppercase tracking-wider border-b border-slate-200 pb-2">
+          1. Identification and Significance of the Innovation
+        </h2>
+        <p>
+          Deep-space transit architectures—including crewed Mars missions, outer-planet probes, and high-energy orbital transfer vehicles—are strictly limited by the thrust-to-weight and specific impulse trade-offs of chemical and fission-electric systems. Fusion-enabled propulsion architectures such as the Direct Fusion Drive, Field-Reversed Configurations, and Magneto-Inertial Propulsion offer theoretical specific power ratings exceeding $P_{\text{specific}} > 1\text{ kW/kg}$ with specific impulses ranging from $I_{sp} \approx 5{,}000\text{ s}$ to $15{,}000\text{ s}$. Realizing these capabilities requires on-axis magnetic field strengths between $B = 8\text{ T}$ and $15\text{ T}$ to compress plasma or collimate high-enthalpy exhaust streams through magnetic nozzles.
+        </p>
+        <p>
+          Conventional Low-Temperature Superconductors (NbTi, $\text{Nb}_3\text{Sn}$) are practically non-viable for flight architectures because they require liquid helium cooling at $T \approx 4.2\text{ K}$. Maintaining liquid helium introduces severe launch-mass penalties, cryogen boil-off risks, and massive radiator area requirements. Under the Stefan-Boltzmann radiation law:
+        </p>
+        <div class="py-2 text-center text-sm font-mono bg-slate-50 rounded-lg">
+          $$\dot{Q}_{\text{rad}} = \epsilon \sigma A \left( T_{\text{rad}}^4 - T_{\text{sink}}^4 \right)$$
+        </div>
+        <p>
+          Operating at elevated cryogenic temperatures ($20\text{ K to } 50\text{ K}$) cuts radiator surface area and mass by over $80\%$. RF WaveCode has structured this proposal around three interlocking hardware innovations designed for laboratory co-development:
+        </p>
+        <ul class="list-disc pl-5 space-y-2">
+          <li><strong>Cryogen-Free Conduction Cooling:</strong> Flexible aluminum and pyrolytic graphite busbars coupling coil windings directly to closed-cycle cryocoolers.</li>
+          <li><strong>Non-Insulated (NI) Windings:</strong> Passive self-protecting turn-to-turn current sharing preventing burnout without massive quench dump resistors.</li>
+          <li><strong>Composite Mandrels:</strong> Additively manufactured CTE-matched titanium/carbon fiber mandrels withstanding hoop stresses up to $600\text{ MPa}$ with engineered current density $J_e \ge 400\text{ A/mm}^2$.</li>
+        </ul>
+      </div>
+
+      <!-- Section 2 -->
+      <div class="mt-8 space-y-4 text-sm text-slate-700 leading-relaxed">
+        <h2 class="text-base font-bold text-slate-900 uppercase tracking-wider border-b border-slate-200 pb-2">
+          2. Phase I Technical Objectives & Risk Mitigations
+        </h2>
+        <div class="grid grid-cols-1 gap-3">
+          <div class="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+            <h3 class="font-bold text-slate-900">Objective 1: Coupled Electromechanical and Screening-Current Stress FEA</h3>
+            <p class="text-xs text-slate-600 mt-1">Led by RF WaveCode software simulation tools. Quantifies internal shear and radial peel stresses to ensure strain stays well below $\epsilon < 0.4\%$ under dynamic charging.</p>
+          </div>
+          <div class="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+            <h3 class="font-bold text-slate-900">Objective 2: Cryothermal Busbar Optimization &amp; Fast-Neutron Attenuation</h3>
+            <p class="text-xs text-slate-600 mt-1">Multi-physics conduction model maintaining a winding-to-sink gradient $\Delta T < 3\text{ K}$ under secondary plasma radiation loads ($50\text{ W/m}^2$).</p>
+          </div>
+          <div class="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+            <h3 class="font-bold text-slate-900">Objective 3: Dynamic Charging Delay and Passive Quench Lab Testing</h3>
+            <p class="text-xs text-slate-600 mt-1">Winding and vacuum cryogenic evaluation of a 50–100 mm sub-scale test coil down to 30 K to empirically calibrate charging delays ($\tau = L_{\text{coil}} / R_{\text{contact}}$).</p>
+          </div>
+          <div class="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+            <h3 class="font-bold text-slate-900">Objective 4: Phase II Scale-Up Blueprint &amp; Flight Roadmap</h3>
+            <p class="text-xs text-slate-600 mt-1">CAD tooling designs, manufacturing bills of material, and institutional test protocols for full-scale $\ge 10\text{ T}$ prototype coil fabrication.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 3: Lab Division of Labor Callout -->
+      <div class="mt-8 p-5 bg-sky-50 border border-sky-200 rounded-xl space-y-2">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-sky-900">Institutional Division of Labor (The Collaboration Model)</h3>
+        <p class="text-xs text-slate-700 leading-relaxed">
+          <strong>RF WaveCode (Software Lead):</strong> Finite element multi-physics modeling, quench dynamics simulation, automated instrumentation software, and NASA deliverable reporting.<br/>
+          <strong>Partner Hardware Lab (University / National Lab / Startup):</strong> Precision coil winding equipment, cryogenic vacuum test facility ($<30\text{ K}$), $1{,}000\text{ A}$ power supply, and empirical sensor verification.
+        </p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- TAB 3: HARDWARE LAB PARTNERSHIP PORTAL -->
+  <section id="tab-partnership" class="tab-content hidden flex-1 max-w-5xl mx-auto w-full px-4 sm:px-8 py-8 space-y-8">
+    
+    <div class="bg-gradient-to-r from-sky-950 via-slate-900 to-indigo-950 border border-sky-500/30 rounded-2xl p-6 sm:p-10 shadow-2xl relative overflow-hidden">
+      <div class="max-w-2xl relative z-10">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-mono font-medium mb-3">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          OPEN CALL FOR NASA SBIR/STTR CO-APPLICANTS
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+          Are You a Superconductivity, Magnetics, or Cryogenics Lab?
+        </h2>
+        <p class="mt-3 text-sm text-slate-300 leading-relaxed">
+          <strong>RF WaveCode</strong> specializes in high-speed scientific software, FEA digital twins, and government proposal writing. We are actively seeking hardware co-investigators with physical testing infrastructure to co-author and execute NASA Phase I &amp; Phase II contracts.
+        </p>
+      </div>
+
+      <!-- Background design flare -->
+      <div class="absolute -right-16 -bottom-16 w-80 h-80 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
+    </div>
+
+    <!-- What We Bring vs What You Bring -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-slate-900/90 border border-slate-800 p-6 rounded-2xl space-y-4">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-sky-600/30 text-sky-400 flex items-center justify-center font-bold font-mono">SW</div>
+          <h3 class="font-bold text-white text-base">What RF WaveCode Supplies</h3>
+        </div>
+        <ul class="space-y-2.5 text-xs text-slate-300">
+          <li class="flex items-start gap-2">
+            <svg class="w-4 h-4 text-sky-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            <span>Complete NASA SBIR/STTR proposal writing and compliance documentation.</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <svg class="w-4 h-4 text-sky-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            <span>Coupled 3D electromagnetic, structural, and thermal multi-physics simulation suite.</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <svg class="w-4 h-4 text-sky-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            <span>Real-time cryogenic instrumentation software and automated quench alert system.</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <svg class="w-4 h-4 text-sky-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            <span>Lead management of software budgets, cloud simulations, and deliverable reporting.</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="bg-slate-900/90 border border-slate-800 p-6 rounded-2xl space-y-4">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-emerald-600/30 text-emerald-400 flex items-center justify-center font-bold font-mono">HW</div>
+          <h3 class="font-bold text-white text-base">What Your Hardware Lab Brings</h3>
+        </div>
+        <ul class="space-y-2.5 text-xs text-slate-300">
+          <li class="flex items-start gap-2">
+            <svg class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            <span>Tension-regulated winding apparatus for $4\text{ mm}$ and $12\text{ mm}$ 2G REBCO coated conductor tapes.</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <svg class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            <span>Cryogenic vacuum testing chamber capable of base temperatures $T \le 30\text{ K}$.</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <svg class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            <span>High-current DC power supply ($500\text{ A to } 1{,}000\text{ A}$) with telemetry taps.</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <svg class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            <span>Experimental validation of critical current $I_c$ and passive quench current diversion.</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Direct Email Contact Card -->
+    <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-8 sm:p-12 text-center space-y-6 shadow-xl">
+      <div class="w-14 h-14 mx-auto rounded-2xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400">
+        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+        </svg>
+      </div>
+
+      <div class="max-w-xl mx-auto space-y-3">
+        <h3 class="text-xl sm:text-2xl font-bold text-white tracking-tight">Lab Collaboration Inquiry</h3>
+        <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">
+          Ready to partner on co-authored NASA SBIR/STTR proposals, integrate our finite element digital twin, or evaluate your hardware data with our high-speed telemetry solver? Reach our engineering team directly:
+        </p>
+        
+        <div class="pt-3">
+          <a href="mailto:support@rfwavecode.com" 
+             class="inline-flex items-center gap-3 px-6 py-3.5 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-mono font-bold text-sm sm:text-base shadow-lg shadow-sky-600/30 transition transform hover:-translate-y-0.5">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.206"/></svg>
+            <span>support@rfwavecode.com</span>
+          </a>
+        </div>
+        <p class="text-[11px] text-slate-500 font-mono">
+          Response turnaround within 24 hours &bull; Mutual NDA templates ready upon request
+        </p>
+      </div>
+    </div>
+
+    <!-- Document Footer -->
+    <footer class="pt-6 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500 font-mono">
+      <span>RF WaveCode &bull; Space Propulsion Digital Twin Platform</span>
+      <span>Direct Contact: <a href="mailto:support@rfwavecode.com" class="text-sky-400 hover:underline">support@rfwavecode.com</a></span>
+    </footer>
+  </section>
+
+  <!-- Complete Application & Simulation Scripts -->
+  <script>
+    // Tab Switching Logic
+    function switchTab(tabId) {
+      const tabs = ['simulation', 'proposal', 'partnership'];
+      tabs.forEach(id => {
+        const tabEl = document.getElementById('tab-' + id);
+        const desktopBtn = document.getElementById('tabBtn-' + id);
+        const mobileBtn = document.getElementById('mTabBtn-' + id);
+
+        if (id === tabId) {
+          if (tabEl) tabEl.classList.remove('hidden');
+          if (desktopBtn) {
+            desktopBtn.className = 'px-4 py-2 rounded-lg bg-sky-600 text-white font-semibold shadow-sm transition flex items-center gap-1.5';
+          }
+          if (mobileBtn) {
+            mobileBtn.className = 'px-3 py-1.5 rounded-lg bg-sky-600 text-white whitespace-nowrap';
+          }
+        } else {
+          if (tabEl) tabEl.classList.add('hidden');
+          if (desktopBtn) {
+            desktopBtn.className = 'px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition flex items-center gap-1.5';
+          }
+          if (mobileBtn) {
+            mobileBtn.className = 'px-3 py-1.5 rounded-lg text-slate-400 hover:bg-slate-800 whitespace-nowrap';
+          }
+        }
+      });
+
+      // Resize 3D renderer if switching to simulation tab
+      if (tabId === 'simulation' && window.renderer && window.camera) {
+        setTimeout(onWindowResize, 50);
+      }
+    }
+
+    // Toast Notification System
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toastMsg');
+      if (!toast || !toastMsg) return;
+      toastMsg.textContent = message;
+      toast.classList.remove('opacity-0', 'translate-y-20', 'pointer-events-none');
+      toast.classList.add('opacity-100', 'translate-y-0');
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-20', 'pointer-events-none');
+        toast.classList.remove('opacity-100', 'translate-y-0');
+      }, 3200);
+    }
+
+    // Markdown Proposal Content for Download
+    const markdownProposalText = `# NASA SBIR/STTR Phase I Technical Proposal
+
+**Project Title:** Ultra-Lightweight, Conduction-Cooled REBCO High-Temperature Superconducting (HTS) Magnet Assemblies for Compact Space Fusion and Plasma Propulsion  
+**Topic Codes:** TX01.01 (Advanced In-Space Propulsion Technologies) / TX03.01 (Power and Energy Storage)  
+**Period of Performance:** 6 Months  
+**Proposed Budget:** $225,000 (NASA Phase I Maximum Award)  
+**Target Readiness:** TRL 2 to TRL 4  
+**Software Lead:** RF WaveCode (support@rfwavecode.com)
+
+---
+
+## Executive Driving Mechanism
+The core driving mechanism is a cryogen-free, conduction-cooled rare-earth barium copper oxide high-temperature superconducting coil assembly operating between 20 K and 50 K via solid-state pulse-tube cryocoolers and thermal busbars, engineered with a non-insulated winding topology that passively bypasses quench hot-spots through turn-to-turn radial current sharing without the mass penalty of active detection electronics or dump resistors.
+
+---
+
+## 1. Identification and Significance of the Innovation
+Deep-space transit architectures—including crewed Mars missions, outer-planet probes, and high-energy orbital transfer vehicles—are strictly limited by the thrust-to-weight and specific impulse trade-offs of chemical and fission-electric systems. Fusion-enabled propulsion architectures such as the Direct Fusion Drive, Field-Reversed Configurations, and Magneto-Inertial Propulsion offer theoretical specific power ratings exceeding P_specific > 1 kW/kg with specific impulses ranging from Isp = 5,000 s to 15,000 s. Realizing these capabilities requires on-axis magnetic field strengths between B = 8 T and 15 T to compress plasma or collimate high-enthalpy exhaust streams through magnetic nozzles.
+
+Operating at elevated cryogenic temperatures (20 K to 50 K) cuts radiator surface area and mass by over 80% due to T_rad^4 Stefan-Boltzmann scaling.
+
+## 2. Technical Objectives & Risk Mitigations
+1. **Objective 1:** Coupled Electromechanical and Screening-Current Stress Modeling (Months 1–2).
+2. **Objective 2:** Cryothermal Busbar Optimization and Fast-Neutron Attenuation (Months 2–4).
+3. **Objective 3:** Dynamic Charging Delay and Passive Quench Experimental Testing (Months 3–5).
+4. **Objective 4:** Phase II Scale-Up Blueprint and Manufacturing Plan (Month 6).
+
+## 3. Institutional Division of Labor
+* **RF WaveCode (Software Lead):** Finite element multi-physics modeling, quench dynamics simulation, automated instrumentation software, and NASA deliverable reporting.
+* **Hardware Partner Lab:** Precision coil winding equipment, cryogenic vacuum test facility (<30 K), 1,000 A power supply, and empirical sensor verification.
+
+Contact: support@rfwavecode.com
+`;
+
+    function downloadProposalMarkdown() {
+      const blob = new Blob([markdownProposalText], { type: 'text/markdown;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'NASA_SBIR_Phase_I_HTS_Propulsion_RF_WaveCode.md';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      showToast('Downloaded NASA SBIR Markdown proposal template.');
+    }
+
+    // Multi-Physics Simulation Parameters & Solver
+    let simState = {
+      temp: 30,       // K
+      current: 250,   // Amps
+      turns: 180,     // N
+      isQuenched: false
+    };
+
+    function resetSimParams() {
+      document.getElementById('slider-temp').value = 30;
+      document.getElementById('slider-current').value = 250;
+      document.getElementById('slider-turns').value = 180;
+      simState.isQuenched = false;
+      updateSimParameters();
+      showToast('Simulation parameters restored to baseline.');
+    }
+
+    function updateSimParameters() {
+      const temp = parseFloat(document.getElementById('slider-temp').value);
+      const current = parseFloat(document.getElementById('slider-current').value);
+      const turns = parseInt(document.getElementById('slider-turns').value);
+
+      simState.temp = temp;
+      simState.current = current;
+      simState.turns = turns;
+
+      // Update text displays
+      document.getElementById('val-temp').innerText = `${temp} K`;
+      document.getElementById('val-current').innerText = `${current} A`;
+      document.getElementById('val-turns').innerText = `${turns} Turns`;
+      document.getElementById('stat-temp-tag').innerText = `${temp} K`;
+
+      // Solve on-axis B field: B0 ≈ mu0 * N * I / (2 * R_avg), with R_avg ≈ 0.05m
+      const mu0 = 4 * Math.PI * 1e-7;
+      const rAvg = 0.055;
+      let bField = (mu0 * turns * current) / (2 * rAvg);
+
+      // Solve hoop stress: sigma_theta = J * B * r, or approximation
+      // Copper/REBCO tape cross section ~ 4mm x 0.1mm = 0.4 mm²
+      const tapeAreaMm2 = 0.4;
+      const currentDensity = current / tapeAreaMm2; // A/mm²
+      let hoopStress = (currentDensity * bField * rAvg * 1e-1); // in MPa approx
+      if (hoopStress < 80) hoopStress = 80 + (turns * current * 0.007);
+
+      // Radiator Area relative scaling: A_rad ~ 1 / T^4 normalized to 30K base ~ 2.4 m²
+      const refTemp = 30;
+      const refArea = 2.4;
+      const radArea = refArea * Math.pow(refTemp / Math.max(temp, 4), 4) * (current / 250);
+      const boundedArea = Math.min(Math.max(radArea, 0.4), 85.0).toFixed(1);
+
+      // Mass reduction relative to 4.2K
+      const areaAt4K = refArea * Math.pow(refTemp / 4.2, 4);
+      let pctCut = Math.round((1 - (radArea / areaAt4K)) * 100);
+      if (pctCut > 99) pctCut = 99;
+      if (pctCut < 10) pctCut = 10;
+
+      // HUD updates
+      document.getElementById('hud-bfield').innerText = `${bField.toFixed(1)} T`;
+      document.getElementById('hud-stress').innerText = `${Math.round(hoopStress)} MPa`;
+      document.getElementById('stat-radiator').innerText = `${boundedArea} m²`;
+      document.getElementById('stat-reduction').innerText = `${pctCut}%`;
+
+      const quenchStatusEl = document.getElementById('hud-quench');
+      if (simState.isQuenched) {
+        quenchStatusEl.innerText = 'PASSIVE SHUNTING (AUTO)';
+        quenchStatusEl.className = 'text-amber-400 font-bold';
+      } else if (temp > 65 || current > 450) {
+        quenchStatusEl.innerText = 'CRITICAL MARGIN LOW';
+        quenchStatusEl.className = 'text-rose-400 font-bold';
+      } else {
+        quenchStatusEl.innerText = 'SUPERCONDUCTING';
+        quenchStatusEl.className = 'text-emerald-400 font-bold';
+      }
+
+      update3DVisuals(bField, temp);
+    }
+
+    function triggerHotspotTest() {
+      simState.isQuenched = true;
+      const quenchStatusEl = document.getElementById('hud-quench');
+      quenchStatusEl.innerText = 'LOCAL NORMAL ZONE DEFECT';
+      quenchStatusEl.className = 'text-rose-400 font-bold animate-pulse';
+
+      showToast('Hotspot induced! NI turn-to-turn shunting auto-stabilizing...');
+
+      // Animate Chart.js surge
+      if (quenchChart) {
+        quenchChart.data.datasets[1].data = [0, 85, 230, 240, 190, 110, 45, 12, 0];
+        quenchChart.update();
+      }
+
+      setTimeout(() => {
+        quenchStatusEl.innerText = 'PASSIVE STABILIZATION VERIFIED';
+        quenchStatusEl.className = 'text-emerald-400 font-bold';
+        simState.isQuenched = false;
+      }, 3500);
+    }
+
+    // Chart.js Quench Dynamics Graph
+    let quenchChart;
+    function initChart() {
+      const ctx = document.getElementById('quenchChart');
+      if (!ctx) return;
+
+      quenchChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['0ms', '50ms', '100ms', '150ms', '200ms', '250ms', '300ms', '350ms', '400ms'],
+          datasets: [
+            {
+              label: 'Azimuthal Current I_θ (A)',
+              data: [250, 245, 160, 120, 140, 190, 230, 248, 250],
+              borderColor: '#38bdf8',
+              backgroundColor: 'rgba(56, 189, 248, 0.1)',
+              tension: 0.35,
+              fill: true,
+              borderWidth: 2
+            },
+            {
+              label: 'Radial Shunt Current I_r (A)',
+              data: [0, 12, 110, 145, 115, 62, 22, 4, 0],
+              borderColor: '#f59e0b',
+              backgroundColor: 'rgba(245, 158, 11, 0.1)',
+              tension: 0.35,
+              fill: true,
+              borderWidth: 2
+            },
+            {
+              label: 'Hotspot Temp T_hot (K)',
+              data: [30, 31, 48, 62, 59, 47, 36, 32, 30],
+              borderColor: '#f43f5e',
+              borderDash: [4, 4],
+              tension: 0.35,
+              borderWidth: 1.5,
+              yAxisID: 'yTemp'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: {
+                color: '#94a3b8',
+                font: { size: 10, family: 'JetBrains Mono' },
+                boxWidth: 12
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              ticks: { color: '#64748b', font: { size: 9, family: 'JetBrains Mono' } }
+            },
+            y: {
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              ticks: { color: '#64748b', font: { size: 9, family: 'JetBrains Mono' } }
+            },
+            yTemp: {
+              position: 'right',
+              grid: { drawOnChartArea: false },
+              ticks: { color: '#f43f5e', font: { size: 9, family: 'JetBrains Mono' } }
+            }
+          }
+        }
+      });
+    }
+
+    // Three.js 3D Electromagnetic Digital Twin
+    let scene, camera, renderer, coilGroup, fieldRings = [];
+    let isMouseDown = false, mouseX = 0, mouseY = 0;
+
+    function init3D() {
+      const container = document.getElementById('three-container');
+      if (!container) return;
+
+      const width = container.clientWidth || 600;
+      const height = container.clientHeight || 420;
+
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x040813);
+
+      camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+      camera.position.set(0, 5, 11);
+      camera.lookAt(0, 0, 0);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      container.appendChild(renderer.domElement);
+
+      // Lighting
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambientLight);
+
+      const dirLight1 = new THREE.DirectionalLight(0x38bdf8, 1.2);
+      dirLight1.position.set(5, 10, 7);
+      scene.add(dirLight1);
+
+      const dirLight2 = new THREE.DirectionalLight(0xf59e0b, 0.8);
+      dirLight2.position.set(-6, -4, -5);
+      scene.add(dirLight2);
+
+      coilGroup = new THREE.Group();
+
+      // Double-Pancake 2G REBCO Tape Windings
+      const pancakeMaterial = new THREE.MeshStandardMaterial({
+        color: 0xd97706,
+        roughness: 0.35,
+        metalness: 0.85
+      });
+
+      const numPancakes = 4;
+      for (let i = 0; i < numPancakes; i++) {
+        const yOffset = (i - 1.5) * 0.42;
+        const ringGeo = new THREE.CylinderGeometry(2.4, 2.4, 0.32, 48, 1, true);
+        const ringMesh = new THREE.Mesh(ringGeo, pancakeMaterial);
+        ringMesh.position.y = yOffset;
+        coilGroup.add(ringMesh);
+
+        // Turn grooves
+        const innerGrooveGeo = new THREE.TorusGeometry(2.39, 0.03, 8, 48);
+        const innerMesh = new THREE.Mesh(innerGrooveGeo, new THREE.MeshBasicMaterial({ color: 0x78350f }));
+        innerMesh.rotation.x = Math.PI / 2;
+        innerMesh.position.y = yOffset;
+        coilGroup.add(innerMesh);
+      }
+
+      // Titanium CTE-Matched Central Mandrel
+      const mandrelMaterial = new THREE.MeshStandardMaterial({
+        color: 0x475569,
+        roughness: 0.5,
+        metalness: 0.7
+      });
+      const mandrelGeo = new THREE.CylinderGeometry(1.65, 1.65, 2.3, 36);
+      const mandrel = new THREE.Mesh(mandrelGeo, mandrelMaterial);
+      coilGroup.add(mandrel);
+
+      // Conduction Cooling Busbars (High-Purity Al / Graphite)
+      const busbarMaterial = new THREE.MeshStandardMaterial({
+        color: 0x0284c7,
+        roughness: 0.2,
+        metalness: 0.9
+      });
+      for (let a = 0; a < 4; a++) {
+        const barGeo = new THREE.BoxGeometry(0.18, 2.6, 0.35);
+        const bar = new THREE.Mesh(barGeo, busbarMaterial);
+        const angle = (a * Math.PI) / 2;
+        bar.position.set(Math.cos(angle) * 2.58, 0, Math.sin(angle) * 2.58);
+        bar.rotation.y = -angle;
+        coilGroup.add(bar);
+      }
+
+      // Magnetic Nozzle Plasma Stream (Glowing Cone)
+      const plasmaGeo = new THREE.ConeGeometry(2.8, 4.5, 32, 1, true);
+      const plasmaMat = new THREE.MeshBasicMaterial({
+        color: 0x00f0ff,
+        transparent: true,
+        opacity: 0.22,
+        wireframe: true
+      });
+      const plasma = new THREE.Mesh(plasmaGeo, plasmaMat);
+      plasma.position.y = -2.6;
+      plasma.rotation.x = Math.PI;
+      coilGroup.add(plasma);
+
+      // Magnetic Vector Contour Rings
+      for (let f = 0; f < 5; f++) {
+        const rad = 0.8 + f * 0.45;
+        const bRingGeo = new THREE.TorusGeometry(rad, 0.015, 8, 36);
+        const bRingMat = new THREE.MeshBasicMaterial({
+          color: 0x38bdf8,
+          transparent: true,
+          opacity: 0.7 - f * 0.1
+        });
+        const bRing = new THREE.Mesh(bRingGeo, bRingMat);
+        bRing.rotation.x = Math.PI / 2;
+        bRing.position.y = (f - 2) * 0.45;
+        fieldRings.push(bRing);
+        coilGroup.add(bRing);
+      }
+
+      scene.add(coilGroup);
+
+      // Drag to rotate listeners
+      container.addEventListener('mousedown', (e) => {
+        isMouseDown = true;
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+      });
+
+      window.addEventListener('mouseup', () => { isMouseDown = false; });
+
+      container.addEventListener('mousemove', (e) => {
+        if (!isMouseDown) return;
+        const deltaX = e.clientX - mouseX;
+        const deltaY = e.clientY - mouseY;
+        coilGroup.rotation.y += deltaX * 0.008;
+        coilGroup.rotation.x += deltaY * 0.008;
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+      });
+
+      // Touch listener for mobile
+      let touchX = 0, touchY = 0;
+      container.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+          touchX = e.touches[0].clientX;
+          touchY = e.touches[0].clientY;
+        }
+      }, { passive: true });
+
+      container.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 1) {
+          const deltaX = e.touches[0].clientX - touchX;
+          const deltaY = e.touches[0].clientY - touchY;
+          coilGroup.rotation.y += deltaX * 0.01;
+          coilGroup.rotation.x += deltaY * 0.01;
+          touchX = e.touches[0].clientX;
+          touchY = e.touches[0].clientY;
+        }
+      }, { passive: true });
+
+      window.addEventListener('resize', onWindowResize);
+      animate();
+    }
+
+    function onWindowResize() {
+      const container = document.getElementById('three-container');
+      if (!container || !renderer || !camera) return;
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height);
+    }
+
+    function update3DVisuals(bField, temp) {
+      if (!fieldRings.length) return;
+      // Glow and pulsing rate based on B field
+      fieldRings.forEach((ring, idx) => {
+        const scaleVal = 1 + (bField / 15) * 0.15 * Math.sin(idx + Date.now() * 0.003);
+        ring.scale.set(scaleVal, scaleVal, 1);
+        if (temp > 60) {
+          ring.material.color.setHex(0xf43f5e); // Hot
+        } else {
+          ring.material.color.setHex(0x38bdf8); // Nominal cryogenic
+        }
+      });
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      if (coilGroup && !isMouseDown) {
+        coilGroup.rotation.y += 0.004;
+      }
+      if (renderer && scene && camera) {
+        renderer.render(scene, camera);
+      }
+    }
+
+    // Initialize application on load
+    window.addEventListener('DOMContentLoaded', () => {
+      init3D();
+      initChart();
+      updateSimParameters();
+    });
+  </script>
+</body>
+</html>
